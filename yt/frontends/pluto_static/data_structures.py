@@ -8,6 +8,7 @@ from yt.data_objects.static_output import Dataset
 from yt.funcs import setdefaultattr
 from yt.geometry.api import Geometry
 from yt.geometry.grid_geometry_handler import GridIndex
+from yt.utilities.lib.misc_utilities import _obtain_coords_and_widths
 from yt.utilities.on_demand_imports import _h5py as h5py
 
 from .fields import PlutoStaticFieldInfo
@@ -82,6 +83,21 @@ class PlutoStaticHierarchy(GridIndex, ABC):
             g._prepare_grid()
             g._setup_dx()
             self.grids[i] = g
+            
+    def _icoords_to_fcoords(self, icoords, ires, axes):
+        if axes is None:
+            axes = (0, 1, 2)
+        # this is needed to support projections
+        coords = np.empty(icoords.shape, dtype="f8")
+        cell_widths = np.empty(icoords.shape, dtype="f8")
+        for i, ax in enumerate(axes):
+            coords[:, i], cell_widths[:, i] = _obtain_coords_and_widths(
+                icoords[:, i],
+                ires,
+                self._cell_widths[ax],
+                self.ds.domain_left_edge[ax].d,
+            )
+        return coords, cell_widths  
 
 
 class PlutoStaticDataset(Dataset, ABC):
