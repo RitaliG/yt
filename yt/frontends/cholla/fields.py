@@ -38,9 +38,7 @@ class ChollaFieldInfo(FieldInfoContainer):
 
     def setup_fluid_fields(self):
         unit_system = self.ds.unit_system
-        
-        print('PLUTO ', self.field_list)
-        
+
         # Add velocity fields
         for comp in "xyz":
             self.add_field(
