@@ -37,6 +37,7 @@ _frontends = [
     "open_pmd",
     "owls",
     "owls_subfind",
+    "pluto_static",
     "ramses",
     "rockstar",
     "sdf",

@@ -10,37 +10,52 @@ pres_units = "code_pressure"
 erg_units = "code_mass * (code_length/code_time)**2"
 rho_units = "code_mass / code_length**3"
 mom_units = "code_mass / code_length**2 / code_time"
+vel_units = "code_length/code_time"
 
-
+'''
 def velocity_field(comp):
     def _velocity(field, data):
-        return data["cholla", f"momentum_{comp}"] / data["cholla", "density"]
+        return data["PlutoStatic", f"momentum_{comp}"] / data["PlutoStatic", "density"]
 
     return _velocity
+'''
 
-
-class ChollaFieldInfo(FieldInfoContainer):
+class PlutoStaticFieldInfo(FieldInfoContainer):
     known_other_fields: KnownFieldsT = (
         # Each entry here is of the form
         # ( "name", ("units", ["fields", "to", "alias"], # "display_name")),
-        ("density", (rho_units, ["density"], None)),
-        ("momentum_x", (mom_units, ["momentum_x"], None)),
-        ("momentum_y", (mom_units, ["momentum_y"], None)),
-        ("momentum_z", (mom_units, ["momentum_z"], None)),
-        ("Energy", ("code_pressure", ["total_energy_density"], None)),
-        ("scalar0", (rho_units, [], None)),
-        ("metal_density", (rho_units, ["metal_density"], None)),
+        ("rho", (rho_units, ["density", "rho"], None)),
+        ("vx1", (vel_units, ["vel_x"], None)),
+        ("vx2", (vel_units, ["vel_y"], None)),
+        ("vx3", (vel_units, ["vel_z"], None)),
+        ("prs", (pres_units, ["prs", "pres", "pressure"], None)),
+        # ("scalar0", (rho_units, [], None)),
     )
 
     known_particle_fields = ()
 
-    # In Cholla, conservative variables are written out.
+    # In PlutoStatic, conservative variables are written out.
 
     def setup_fluid_fields(self):
         unit_system = self.ds.unit_system
         
-        print('PLUTO ', self.field_list)
-        
+        # Add tracer fields
+        for i in range(1, self.ds.ntracers+1):
+            if ("pluto_static", "tr%d"%i) in self.field_list:
+                self.add_output_field(
+                    ("pluto_static", "Tracer %d"%i), sampling_type="cell",
+                    units="",
+                )
+                self.alias(
+                    ("pluto_static", "Tracer %d"%i),
+                    ("gas", "Tracer %d"%i),
+                )
+                self.alias(
+                    ("pluto_static", "Tracer %d"%i),
+                    ("gas", "tracer %d"%i),
+                )
+            
+        '''
         # Add velocity fields
         for comp in "xyz":
             self.add_field(
@@ -51,24 +66,24 @@ class ChollaFieldInfo(FieldInfoContainer):
             )
 
         # Add pressure field
-        if ("cholla", "GasEnergy") in self.field_list:
+        if ("PlutoStatic", "GasEnergy") in self.field_list:
             self.add_output_field(
-                ("cholla", "GasEnergy"), sampling_type="cell", units=pres_units
+                ("PlutoStatic", "GasEnergy"), sampling_type="cell", units=pres_units
             )
             self.alias(
                 ("gas", "thermal_energy"),
-                ("cholla", "GasEnergy"),
+                ("PlutoStatic", "GasEnergy"),
                 units=unit_system["pressure"],
             )
 
             def _pressure(field, data):
-                return (data.ds.gamma - 1.0) * data["cholla", "GasEnergy"]
+                return (data.ds.gamma - 1.0) * data["PlutoStatic", "GasEnergy"]
 
         else:
 
             def _pressure(field, data):
                 return (data.ds.gamma - 1.0) * (
-                    data["cholla", "Energy"] - data["gas", "kinetic_energy_density"]
+                    data["PlutoStatic", "Energy"] - data["gas", "kinetic_energy_density"]
                 )
 
         self.add_field(
@@ -79,7 +94,7 @@ class ChollaFieldInfo(FieldInfoContainer):
         )
 
         def _specific_total_energy(field, data):
-            return data["cholla", "Energy"] / data["cholla", "density"]
+            return data["PlutoStatic", "Energy"] / data["PlutoStatic", "density"]
 
         self.add_field(
             ("gas", "specific_total_energy"),
@@ -106,18 +121,18 @@ class ChollaFieldInfo(FieldInfoContainer):
         )
 
         # Add color field if present (scalar0 / density)
-        if ("cholla", "scalar0") in self.field_list:
+        if ("PlutoStatic", "scalar0") in self.field_list:
             self.add_output_field(
-                ("cholla", "scalar0"),
+                ("PlutoStatic", "scalar0"),
                 sampling_type="cell",
                 units=rho_units,
             )
 
             def _color(field, data):
-                return data["cholla", "scalar0"] / data["cholla", "density"]
+                return data["PlutoStatic", "scalar0"] / data["PlutoStatic", "density"]
 
             self.add_field(
-                ("cholla", "color"),
+                ("PlutoStatic", "color"),
                 sampling_type="cell",
                 function=_color,
                 units="",
@@ -125,7 +140,7 @@ class ChollaFieldInfo(FieldInfoContainer):
 
             self.alias(
                 ("gas", "color"),
-                ("cholla", "color"),
+                ("PlutoStatic", "color"),
                 units="",
             )
 
@@ -134,10 +149,10 @@ class ChollaFieldInfo(FieldInfoContainer):
 
             def _metallicity(field, data):
                 # Ensuring that there are no negative metallicities
-                return np.clip(data[("cholla", "color")], 0, np.inf) * Zsun
+                return np.clip(data[("PlutoStatic", "color")], 0, np.inf) * Zsun
 
             self.add_field(
-                ("cholla", "metallicity"),
+                ("PlutoStatic", "metallicity"),
                 sampling_type="cell",
                 function=_metallicity,
                 units="Zsun",
@@ -145,10 +160,10 @@ class ChollaFieldInfo(FieldInfoContainer):
 
             self.alias(
                 ("gas", "metallicity"),
-                ("cholla", "metallicity"),
+                ("PlutoStatic", "metallicity"),
                 units="Zsun",
             )
-
+        '''
     def setup_particle_fields(self, ptype):
         super().setup_particle_fields(ptype)
         # This will get called for every particle type.
