@@ -125,36 +125,40 @@ class PlutoStaticDataset(Dataset, ABC):
                         velocity_unit = line.split()[-1]
             
             constant_names = list(pluto_def_constants.keys())
-            try:
-                length_unit = float(length_unit)
-            except ValueError:
-                for name in constant_names:
-                    length_unit = length_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
-                length_unit = eval(length_unit)
-            
-            try:
-                density_unit = float(density_unit)
-            except ValueError:
-                for name in constant_names:
-                    density_unit = density_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
-                density_unit = eval(density_unit)
-                
-            try:
-                velocity_unit = float(velocity_unit)
-            except ValueError:
-                for name in constant_names:
-                    velocity_unit = velocity_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
-                velocity_unit = eval(velocity_unit)
-                
-            mass_unit = density_unit*length_unit**3
+            if length_unit:
+                try:
+                    length_unit = float(length_unit)
+                except ValueError:
+                    for name in constant_names:
+                        length_unit = length_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                    length_unit = eval(length_unit)
+            if density_unit:
+                try:
+                    density_unit = float(density_unit)
+                except ValueError:
+                    for name in constant_names:
+                        density_unit = density_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                    density_unit = eval(density_unit)
+            if velocity_unit:    
+                try:
+                    velocity_unit = float(velocity_unit)
+                except ValueError:
+                    for name in constant_names:
+                        velocity_unit = velocity_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                    velocity_unit = eval(velocity_unit)
+            if (density_unit) and (length_unit) :    
+                mass_unit = density_unit*length_unit**3
         
         if not length_unit:
             self.length_unit = self.quan(1.0, "AU")
         else:
             self.length_unit = self.quan(length_unit, "cm")
         if not mass_unit:
-            mp = pluto_def_constants['CONST_mp']
-            self.mass_unit = self.quan(self.quan(mp, "g/cm**3")*self.length_unit**3/self.quan(1.0,"Msun"),"Msun")
+            if not density_unit:
+                mp = pluto_def_constants['CONST_mp']
+                self.mass_unit = self.quan(self.quan(mp, "g/cm**3")*self.length_unit**3/self.quan(1.0,"Msun"),"Msun")
+            else:
+               self.mass_unit = self.quan(self.quan(density_unit, "g/cm**3")*self.length_unit**3/self.quan(1.0,"Msun"),"Msun") 
         else:
             self.mass_unit = self.quan(mass_unit, "g")
         if not velocity_unit:
