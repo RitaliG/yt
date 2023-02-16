@@ -33,9 +33,7 @@ class PlutoStaticFieldInfo(FieldInfoContainer):
     )
 
     known_particle_fields = ()
-
-    # In PlutoStatic, conservative variables are written out.
-
+    
     def setup_fluid_fields(self):
         unit_system = self.ds.unit_system
         
@@ -43,110 +41,172 @@ class PlutoStaticFieldInfo(FieldInfoContainer):
         for i in range(1, self.ds.ntracers+1):
             if ("pluto_static", "tr%d"%i) in self.field_list:
                 self.add_output_field(
-                    ("pluto_static", "Tracer %d"%i), sampling_type="cell",
+                    ("pluto_static", "tr%d"%i), sampling_type="cell",
                     units="",
                 )
                 self.alias(
-                    ("pluto_static", "Tracer %d"%i),
-                    ("gas", "Tracer %d"%i),
+                    ("gas", "Tracer %d"%i), 
+                    ("pluto_static", "tr%d"%i), units="",
                 )
                 self.alias(
-                    ("pluto_static", "Tracer %d"%i),
-                    ("gas", "tracer %d"%i),
+                    ("gas", "tracer %d"%i),  
+                    ("pluto_static", "tr%d"%i), units="",
                 )
-            
-        '''
-        # Add velocity fields
-        for comp in "xyz":
-            self.add_field(
-                ("gas", f"velocity_{comp}"),
-                sampling_type="cell",
-                function=velocity_field(comp),
-                units=unit_system["velocity"],
-            )
-
-        # Add pressure field
-        if ("PlutoStatic", "GasEnergy") in self.field_list:
+        
+        if ("pluto_static", "Temp") in self.field_list:
             self.add_output_field(
-                ("PlutoStatic", "GasEnergy"), sampling_type="cell", units=pres_units
+                    ("pluto_static", "Temp"), sampling_type="cell",
+                    units=unit_system["temperature"],
+                )
+            self.alias(
+                ("gas", "Temperature"), 
+                ("pluto_static", "Temp"), units=unit_system["temperature"],
             )
             self.alias(
-                ("gas", "thermal_energy"),
-                ("PlutoStatic", "GasEnergy"),
-                units=unit_system["pressure"],
+                ("gas", "temperature"), 
+                ("pluto_static", "Temp"), units=unit_system["temperature"],
             )
-
-            def _pressure(field, data):
-                return (data.ds.gamma - 1.0) * data["PlutoStatic", "GasEnergy"]
-
+        elif ("pluto_static", "temp") in self.field_list:
+            self.add_output_field(
+                    ("pluto_static", "temp"), sampling_type="cell",
+                    units=unit_system["temperature"],
+                )
+            self.alias(
+                ("gas", "Temperature"), 
+                ("pluto_static", "temp"), units=unit_system["temperature"],
+            )
+            self.alias(
+                ("gas", "temperature"), 
+                ("pluto_static", "temp"), units=unit_system["temperature"],
+            )
+        elif ("pluto_static", "Temperature") in self.field_list:
+            self.add_output_field(
+                    ("pluto_static", "Temperature"), sampling_type="cell",
+                    units=unit_system["temperature"],
+                )
+            self.alias(
+                ("gas", "Temperature"), 
+                ("pluto_static", "Temperature"), units=unit_system["temperature"],
+            )
+            self.alias(
+                ("gas", "temperature"), 
+                ("pluto_static", "Temperature"), units=unit_system["temperature"],
+            )
+        elif ("pluto_static", "temperature") in self.field_list:
+            self.add_output_field(
+                    ("pluto_static", "temperature"), sampling_type="cell",
+                    units=unit_system["temperature"],
+                )
+            self.alias(
+                ("gas", "Temperature"), 
+                ("pluto_static", "temperature"), units=unit_system["temperature"],
+            )
+            self.alias(
+                ("gas", "temperature"), 
+                ("pluto_static", "temperature"), units=unit_system["temperature"],
+            )
         else:
-
-            def _pressure(field, data):
-                return (data.ds.gamma - 1.0) * (
-                    data["PlutoStatic", "Energy"] - data["gas", "kinetic_energy_density"]
-                )
-
-        self.add_field(
-            ("gas", "pressure"),
-            sampling_type="cell",
-            function=_pressure,
-            units=unit_system["pressure"],
-        )
-
-        def _specific_total_energy(field, data):
-            return data["PlutoStatic", "Energy"] / data["PlutoStatic", "density"]
-
-        self.add_field(
-            ("gas", "specific_total_energy"),
-            sampling_type="cell",
-            function=_specific_total_energy,
-            units=unit_system["specific_energy"],
-        )
-
-        # Add temperature field
-        def _temperature(field, data):
-            return (
-                data.ds.mu
-                * data["gas", "pressure"]
-                / data["gas", "density"]
-                * mh
-                / kboltz
-            )
-
-        self.add_field(
-            ("gas", "temperature"),
-            sampling_type="cell",
-            function=_temperature,
-            units=unit_system["temperature"],
-        )
-
-        # Add color field if present (scalar0 / density)
-        if ("PlutoStatic", "scalar0") in self.field_list:
-            self.add_output_field(
-                ("PlutoStatic", "scalar0"),
-                sampling_type="cell",
-                units=rho_units,
-            )
-
-            def _color(field, data):
-                return data["PlutoStatic", "scalar0"] / data["PlutoStatic", "density"]
-
+            def _temperature(field, data):
+                return data.ds.mu * (mh / kboltz) * (data[("gas", "pressure")] / data[("gas", "density")])
+                
             self.add_field(
-                ("PlutoStatic", "color"),
-                sampling_type="cell",
-                function=_color,
-                units="",
-            )
-
+                    ("gas", "Temperature"), sampling_type="cell",
+                    function = _temperature,
+                    units=unit_system["temperature"],
+                )
             self.alias(
-                ("gas", "color"),
-                ("PlutoStatic", "color"),
-                units="",
+                ("gas", "temperature"), 
+                ("gas", "Temperature"), units=unit_system["temperature"],
             )
-
+            
+        if ("pluto_static", "mach") in self.field_list:
+            self.add_output_field(
+                    ("pluto_static", "mach"), sampling_type="cell",
+                    units="",
+                )
+            self.alias(
+                ("gas", "Mach"), 
+                ("pluto_static", "mach"), units="",
+            )
+            self.alias(
+                ("gas", "mach"), 
+                ("pluto_static", "mach"), units="",
+            )
+        else:
+            def _mach(field, data):
+                return np.sqrt(data[("pluto_static", "vx1")]**2 + data[("pluto_static", "vx2")]**2 + data[("pluto_static", "vx3")]**2)\
+                    /np.sqrt(data.ds.gamma * (data[("gas", "pressure")] / data[("gas", "density")]))
+                    
+            self.add_field(
+                    ("gas", "Mach"), sampling_type="cell",
+                    function = _mach,
+                    units="",
+                )
+            self.alias(
+                ("gas", "mach"), 
+                ("gas", "Mach"), units="",
+            )
+        
+        if ("pluto_static", "ndens") in self.field_list:
+            self.add_output_field(
+                    ("pluto_static", "ndens"), sampling_type="cell",
+                    units=unit_system["length"]**-3,
+                )
+            self.alias(
+                ("gas", "ndens"), 
+                ("pluto_static", "ndens"), units=unit_system["length"]**-3,
+            )
+            self.alias(
+                ("gas", "Number Density"), 
+                ("pluto_static", "ndens"), units=unit_system["length"]**-3,
+            )
+            self.alias(
+                ("gas", "number density"), 
+                ("pluto_static", "ndens"), units=unit_system["length"]**-3,
+            )
+            self.alias(
+                ("gas", "Number density"), 
+                ("pluto_static", "ndens"), units=unit_system["length"]**-3,
+            )
+        else:
+           def _ndens(field, data):
+                return data["gas", "density"]/(data.ds.mu * mh)
+                    
+           self.add_field(
+                    ("gas", "Number Density"), sampling_type="cell",
+                    function = _ndens,
+                    units=unit_system["length"]**-3,
+           )
+           self.alias(
+                ("gas", "number density"), 
+                ("gas", "Number Density"), units=unit_system["length"]**-3,
+           )
+           self.alias(
+                ("gas", "Number density"), 
+                ("gas", "Number Density"), units=unit_system["length"]**-3,
+           ) 
+        
+        def _velMag(field, data):
+            print('PLUTO ', data)
+            return np.sqrt(data[("pluto_static", "vx1")]**2 + data[("pluto_static", "vx2")]**2 + data[("pluto_static", "vx3")]**2)
+            
+        self.add_field(
+                ("gas", "Speed"), sampling_type="cell",
+                function = _velMag,
+                units=unit_system["velocity"],
+            )       
+        self.alias(
+            ("gas", "speed"), 
+            ("gas", "Speed"), units=unit_system["velocity"],
+        )
+        self.alias(
+            ("gas", "Velocity Magnitude"), 
+            ("gas", "Speed"), units=unit_system["velocity"],
+        )
+        
             # Using color field to define metallicity field, where a color of 1
             # indicates solar metallicity
-
+        '''
             def _metallicity(field, data):
                 # Ensuring that there are no negative metallicities
                 return np.clip(data[("PlutoStatic", "color")], 0, np.inf) * Zsun
