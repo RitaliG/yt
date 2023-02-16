@@ -118,25 +118,33 @@ class PlutoStaticDataset(Dataset, ABC):
             with open(def_file, 'r') as deftxt:
                 for line in deftxt:
                     if 'UNIT_LENGTH' in line:
-                        length_unit = line.split()[-1][:-1]
+                        length_unit = line.split()[-1]
                     if 'UNIT_DENSITY' in line:
-                        density_unit = line.split()[-1][:-1]
+                        density_unit = line.split()[-1]
                     if 'UNIT_VELOCITY' in line:
-                        velocity_unit = line.split()[-1][:-1]
+                        velocity_unit = line.split()[-1]
+            
+            constant_names = list(pluto_def_constants.keys())
             try:
                 length_unit = float(length_unit)
             except ValueError:
-                length_unit = pluto_def_constants[length_unit]
+                for name in constant_names:
+                    length_unit = length_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                length_unit = eval(length_unit)
             
             try:
                 density_unit = float(density_unit)
             except ValueError:
-                density_unit = pluto_def_constants[density_unit]
+                for name in constant_names:
+                    density_unit = density_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                density_unit = eval(density_unit)
                 
             try:
                 velocity_unit = float(velocity_unit)
             except ValueError:
-                velocity_unit = pluto_def_constants[velocity_unit]
+                for name in constant_names:
+                    velocity_unit = velocity_unit.replace(name, 'pluto_def_constants[\"%s\"]'%name)
+                velocity_unit = eval(velocity_unit)
                 
             mass_unit = density_unit*length_unit**3
         
