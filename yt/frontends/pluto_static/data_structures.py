@@ -208,31 +208,6 @@ class PlutoStaticDataset(Dataset, ABC):
         self.mu = 0.61          
         self.refine_by = 1 # no mesh refinement
         self._periodicity = (True, True, True)
-        # self._periodicity = tuple(attrs.get("periodicity", (False, False, False)))
-        '''
-        with open(def_file, 'r') as deftxt:    
-            # If header specifies code units, default to those (in CGS)
-            length_unit = attrs.get("length_unit", None)
-            mass_unit = attrs.get("mass_unit", None)
-            time_unit = attrs.get("time_unit", None)
-            velocity_unit = attrs.get("velocity_unit", None)
-            magnetic_unit = attrs.get("magnetic_unit", None)
-            if length_unit:
-                self.length_unit = self.quan(length_unit[0], "cm")
-            if mass_unit:
-                self.mass_unit = self.quan(mass_unit[0], "g")
-            if time_unit:
-                self.time_unit = self.quan(time_unit[0], "s")
-            if velocity_unit:
-                self.velocity_unit = self.quan(velocity_unit[0], "cm/s")
-            if magnetic_unit:
-                self.magnetic_unit = self.quan(magnetic_unit[0], "gauss")
-
-            # this minimalistic implementation fills the requirements for
-            # this frontend to run, change it to make it run _correctly_ !
-            for key, unit in self.__class__.default_units.items():
-                setdefaultattr(self, key, self.quan(1, unit))
-        '''
         # PlutoStatic cannot yet be run as a cosmological simulation
         self.cosmological_simulation = 0
         self.current_redshift = 0.0
